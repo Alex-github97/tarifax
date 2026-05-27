@@ -1,0 +1,18 @@
+# TarifaX — Dependencias
+# Instalación: pip install -r requirements.txt
+
+# ── Core UI ──────────────────────
+streamlit>=1.35.0
+
+# ── Data ─────────────────────────
+pandas>=2.2.0
+numpy>=1.26.0
+openpyxl>=3.1.2          # lectura/escritura .xlsx
+
+# ── Visualización ────────────────
+plotly>=5.22.0
+
+# ── ML (próximas fases) ──────────
+# scikit-learn>=1.4.0
+# keras>=3.3.0
+# tensorflow>=2.16.0
