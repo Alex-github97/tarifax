@@ -12,7 +12,7 @@ from datetime import datetime
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="TarifaX",
-    page_icon="⚡",
+    page_icon="logo_header.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -121,12 +121,12 @@ section[data-testid="stSidebar"] .stRadio label {
 .header-logo-area {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 120px;
     position: relative;
     z-index: 1;
 }
 .header-logo-area img {
-    max-height: 60px;
+    max-height: 180px;
     object-fit: contain;
 }
 
@@ -422,7 +422,7 @@ if "Dashboard" in nav:
         """, unsafe_allow_html=True)
 
     # ── Power BI embed ───────────────────────────────────────────
-    POWERBI_EMBED_URL = "https://app.fabric.microsoft.com/reportEmbed?reportId=ee9e5dd8-ebd1-4656-9b62-90702bec4bca&autoAuth=true&ctid=a4e67291-b9e0-41f5-9be1-356ab2c0918c"
+    POWERBI_EMBED_URL = "https://app.powerbi.com/view?r=eyJrIjoiNTA3OGUwYjMtYzFiNC00MGI1LWFiODctMmJhNWJhNGJmYTVlIiwidCI6ImE0ZTY3MjkxLWI5ZTAtNDFmNS05YmUxLTM1NmFiMmMwOTE4YyIsImMiOjR9"
 
     if POWERBI_EMBED_URL:
         st.components.v1.iframe(POWERBI_EMBED_URL, height=600, scrolling=True)
