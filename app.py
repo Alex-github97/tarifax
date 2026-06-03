@@ -605,7 +605,7 @@ elif "TarifaX" in nav:
             df2,
             df1,
             on=key,
-            how="inner",
+            how="right",
             suffixes=("_externo", "_interno"),
         )
         result["procesado_en"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
