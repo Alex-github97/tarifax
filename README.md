@@ -31,9 +31,12 @@ La app abre automáticamente en `http://localhost:8501`
 
 ```
 tarifax/
-├── app.py              ← Aplicación principal
-├── requirements.txt    ← Dependencias
-└── README.md
+├── app.py                    ← Aplicación principal
+├── requirements.txt          ← Dependencias
+├── README.md
+├── BBDD_PRUEBA_SICETAC.xlsx  ← Base interna SICETAC (DF1)
+├── plantilla_tarifax.xlsx    ← Plantilla descargable para usuarios (DF2)
+└── logo_header.png           ← Logo del header (opcional)
 ```
 
 ---
@@ -64,20 +67,42 @@ return pd.read_excel("data/base_interna.xlsx")
 ```
 
 ### Columna clave del merge
-Por defecto el cruce usa `codigo_producto`.  
+Por defecto el cruce usa `ORIGEN`.  
 Cámbiala en la variable `key_col` dentro de la sección TarifaX:
 ```python
-key_col = "codigo_producto"   # ← ajusta al nombre real de tu columna clave
+key_col = "ORIGEN"   # ← ajusta al nombre real de tu columna clave
 ```
 
 ### Lógica del merge
 Personaliza el tipo de join y transformaciones en `run_merge()`:
 ```python
-def run_merge(df1, df2):
-    result = pd.merge(df2, df1, on="codigo_producto", how="left")
+def run_merge(df1, df2, key):
+    result = pd.merge(df2, df1, on=key, how="right")
     # agrega aquí tus reglas de negocio...
     return result
 ```
+
+### Columnas de precio para variación
+El resultado final incluye automáticamente una columna `variacion_precio` calculada como:
+
+```
+variacion_precio = precio_actual (DF2) / precio_sicetac (DF1)
+```
+
+Ajusta los nombres exactos de columna en `app.py`:
+```python
+COL_PRECIO_ACTUAL  = "PRECIO_ACTUAL"    # ← columna de precio del flete actual en DF2
+COL_PRECIO_SICETAC = "PRECIO_SICETAC"   # ← columna de precio SICETAC en DF1
+```
+
+### Plantilla de carga (DF2)
+Para activar el botón de descarga de plantilla en la interfaz, coloca tu archivo en la carpeta del proyecto con el nombre exacto:
+```
+tarifax/
+└── plantilla_tarifax.xlsx   ← tu plantilla aquí
+```
+El botón aparecerá automáticamente debajo del cargador de archivos con el texto:  
+*"Si no tienes la plantilla para cargar el archivo da click aquí para descargarla"*
 
 ---
 
@@ -95,13 +120,16 @@ Descomenta las dependencias en `requirements.txt` cuando las necesites.
 
 ## 📋 Formato esperado del Excel (DF2)
 
-El archivo que el usuario cargue debe contener **al menos** la columna clave:
+El archivo que el usuario cargue debe contener **al menos** la columna clave y la columna de precio actual:
 
-| codigo_producto | cantidad | ... |
-|-----------------|----------|-----|
-| PROD-0001       | 5        | ... |
-| PROD-0042       | 2        | ... |
+| ORIGEN    | PRECIO_ACTUAL | ... |
+|-----------|---------------|-----|
+| BOGOTA    | 150000        | ... |
+| MEDELLIN  | 98000         | ... |
+
+> La columna **PRECIO_ACTUAL** se divide entre **PRECIO_SICETAC** (de la base interna) para generar la columna  en el resultado.  
+> Si tus columnas tienen nombres distintos, ajusta  y  en .
 
 ---
 
-*TarifaX v1.0.0*
+*TarifaX v1.1.0*

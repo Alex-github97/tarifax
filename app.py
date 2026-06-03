@@ -528,7 +528,7 @@ elif "TarifaX" in nav:
     #  o una ruta absoluta:
     #      DF1_PATH = Path("C:/datos/base_interna.xlsx")
     # ────────────────────────────────────────────────────────────
-    DF1_PATH = BASE_DIR / "BBDD_PRUEBA_SICETAC.xlsx"   # ← AJUSTA ESTA RUTA
+    DF1_PATH = BASE_DIR / "TARIFARIO_SICETAC.xlsx"   # ← AJUSTA ESTA RUTA
 
     @st.cache_data(show_spinner=False)
     def load_internal_df(path: str) -> pd.DataFrame:
@@ -580,6 +580,23 @@ elif "TarifaX" in nav:
             help="Sube el archivo Excel que deseas cruzar con la base interna.",
         )
 
+        # ── Botón de descarga de plantilla ──────────────────────
+        # INSTRUCCIÓN: Coloca el archivo plantilla en la misma carpeta
+        # que app.py con el nombre "plantilla_tarifax.xlsx".
+        # Si no existe, el botón no se mostrará.
+        TEMPLATE_PATH = BASE_DIR / "plantilla_cotizacion_tarifax.xlsx"
+        if TEMPLATE_PATH.exists():
+            with open(TEMPLATE_PATH, "rb") as tpl_file:
+                tpl_bytes = tpl_file.read()
+            st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
+            st.download_button(
+                label="📥  Si no tienes la plantilla para cargar el archivo da click aquí para descargarla",
+                data=tpl_bytes,
+                file_name="plantilla_cotizacion_tarifax.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="download_template",
+            )
+
         if uploaded_file:
             st.success(f"✅ **{uploaded_file.name}** cargado correctamente")
 
@@ -595,6 +612,14 @@ elif "TarifaX" in nav:
 
     key_col = "ORIGEN"   # ← AJUSTA AL NOMBRE REAL DE TU COLUMNA CLAVE
 
+    # ── Nombres de columnas de precio ───────────────────────────
+    # INSTRUCCIÓN: Ajusta estos nombres al nombre exacto de cada
+    # columna de precio en sus respectivos archivos.
+    #   - COL_PRECIO_ACTUAL  → columna de precio del flete actual en DF2 (tu archivo)
+    #   - COL_PRECIO_SICETAC → columna de precio SICETAC en DF1 (base interna)
+    COL_PRECIO_ACTUAL  = "TARIFA_CLIENTE"    # ← columna de precio en DF2
+    COL_PRECIO_SICETAC = "COSTO_TOTAL_VIAJE"   # ← columna de precio en DF1
+
     def run_merge(df1: pd.DataFrame, df2: pd.DataFrame, key: str) -> pd.DataFrame:
         """
         Lógica central del merge entre DF1 (base interna) y DF2 (archivo cargado).
@@ -605,10 +630,44 @@ elif "TarifaX" in nav:
             df2,
             df1,
             on=key,
-            how="right",
-            suffixes=("_externo", "_interno"),
+            how="left",
+            suffixes=("_cliente", "_sicetac"),
         )
         result["procesado_en"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # ── Columna de variación precio actual vs SICETAC ───────
+        # Fórmula: precio_actual (DF2) / precio_sicetac (DF1)
+        # Detecta automáticamente los sufijos que pandas pudo añadir
+        # al nombre de la columna si existe en ambos dataframes.
+        def _find_col(df, base_name):
+            """Busca la columna exacta o con sufijo _cliente / _sicetac."""
+            if base_name in df.columns:
+                return base_name
+            for suffix in ("_cliente", "_sicetac"):
+                candidate = f"{base_name}{suffix}"
+                if candidate in df.columns:
+                    return candidate
+            return None
+
+        col_actual  = _find_col(result, COL_PRECIO_ACTUAL)
+        col_sicetac = _find_col(result, COL_PRECIO_SICETAC)
+
+        if col_actual and col_sicetac:
+            result["variacion_precio"] = (
+                result[col_actual] / result[col_sicetac].replace(0, pd.NA)
+            ).round(4)
+        else:
+            missing = []
+            if not col_actual:
+                missing.append(f"'{COL_PRECIO_ACTUAL}' (precio actual en DF2)")
+            if not col_sicetac:
+                missing.append(f"'{COL_PRECIO_SICETAC}' (precio SICETAC en DF1)")
+            st.warning(
+                f"⚠️ No se pudo calcular **variacion_precio** — "
+                f"columnas no encontradas: {', '.join(missing)}.\n\n"
+                f"Ajusta las variables `COL_PRECIO_ACTUAL` y `COL_PRECIO_SICETAC` en el código."
+            )
+
         return result
 
     if uploaded_file is not None and df_internal is not None:
